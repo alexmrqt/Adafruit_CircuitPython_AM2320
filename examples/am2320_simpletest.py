@@ -1,10 +1,9 @@
 import time
-import board
-import busio
+from machine import I2C
 import adafruit_am2320
 
-# can also use board.SDA and board.SCL for neater looking code!
-i2c = busio.I2C(board.D2, board.D0)
+i2c = I2C(0, I2C.MASTER)
+i2c.init(I2C.MASTER, baudrate=100000)
 am = adafruit_am2320.AM2320(i2c)
 
 

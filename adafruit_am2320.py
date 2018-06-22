@@ -23,9 +23,10 @@
 `adafruit_am2320`
 ====================================================
 
-This is a CircuitPython driver for the AM2320 temperature and humidity sensor.
+This is a MicroPython driver for the AM2320 temperature and humidity sensor,
+adapted from Adafreuit's implementation en CircuitPython.
 
-* Author(s): Limor Fried
+* Author(s): Limor Fried, Alexandre Marquet.
 
 Implementation Notes
 --------------------
@@ -37,9 +38,8 @@ Implementation Notes
 
 **Software and Dependencies:**
 
-* Adafruit CircuitPython firmware for the ESP8622 and M0-based boards:
-    https://github.com/adafruit/circuitpython/releases
-* Adafruit's Bus Device library: https://github.com/adafruit/Adafruit_CircuitPython_BusDevice
+* MicroPython:
+    https://github.com/micropython/micropython
 
 """
 
@@ -51,11 +51,10 @@ except ImportError:
 
 import time
 
-from adafruit_bus_device.i2c_device import I2CDevice
 from micropython import const
 
 __version__ = "0.0.0-auto.0"
-__repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_am2320.git"
+__repo__ = "https://github.com/alexmrqt/Adafruit_CircuitPython_am2320.git"
 
 
 AM2320_DEFAULT_ADDR = const(0x5C)
@@ -80,36 +79,36 @@ def _crc16(data):
 class AM2320:
     """A driver for the AM2320 temperature and humidity sensor.
 
-    :param i2c_bus: The `busio.I2C` object to use. This is the only required parameter.
+    :param i2c_bus: The `I2C` object to use. This is the only required parameter.
     :param int address: (optional) The I2C address of the device.
 
     """
     def __init__(self, i2c_bus, address=AM2320_DEFAULT_ADDR):
-        self._i2c = I2CDevice(i2c_bus, address)
+        self._i2c_bus = i2c_bus
+        self._addr = address
 
     def _read_register(self, register, length):
-        with self._i2c as i2c:
-            # wake up sensor
-            i2c.write(bytes([0x00]))
-            time.sleep(0.01)  # wait 10 ms
+        # wake up sensor
+        self._i2c_bus.writeto(self._addr, bytes([0x00]))
+        time.sleep(0.01)  # wait 10 ms
 
-            # Send command to read register
-            cmd = [AM2320_CMD_READREG, register & 0xFF, length]
-            # print("cmd: %s" % [hex(i) for i in cmd])
-            i2c.write(bytes(cmd))
-            time.sleep(0.002)  # wait 2 ms for reply
-            result = bytearray(length+4) # 2 bytes pre, 2 bytes crc
-            i2c.readinto(result)
-            # print("$%02X => %s" % (register, [hex(i) for i in result]))
-            # Check preamble indicates correct readings
-            if result[0] != 0x3 or result[1] != length:
-                raise RuntimeError('I2C modbus read failure')
-            # Check CRC on all but last 2 bytes
-            crc1 = struct.unpack("<H", bytes(result[-2:]))[0]
-            crc2 = _crc16(result[0:-2])
-            if crc1 != crc2:
-                raise RuntimeError('CRC failure 0x%04X vs 0x%04X' % (crc1, crc2))
-            return result[2:-2]
+        # Send command to read register
+        cmd = [AM2320_CMD_READREG, register & 0xFF, length]
+        # print("cmd: %s" % [hex(i) for i in cmd])
+        self._i2c_bus.writeto(self._addr, bytes(cmd))
+        time.sleep(0.002)  # wait 2 ms for reply
+        result = bytearray(length+4) # 2 bytes pre, 2 bytes crc
+        self._i2c_bus.readfrom_into(self._addr, result)
+        # print("$%02X => %s" % (register, [hex(i) for i in result]))
+        # Check preamble indicates correct readings
+        if result[0] != 0x3 or result[1] != length:
+            raise RuntimeError('I2C modbus read failure')
+        # Check CRC on all but last 2 bytes
+        crc1 = struct.unpack("<H", bytes(result[-2:]))[0]
+        crc2 = _crc16(result[0:-2])
+        if crc1 != crc2:
+            raise RuntimeError('CRC failure 0x%04X vs 0x%04X' % (crc1, crc2))
+        return result[2:-2]
 
     @property
     def temperature(self):

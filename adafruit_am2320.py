@@ -24,7 +24,7 @@
 ====================================================
 
 This is a MicroPython driver for the AM2320 temperature and humidity sensor,
-adapted from Adafreuit's implementation en CircuitPython.
+adapted from Adafreuit's implementation in CircuitPython.
 
 * Author(s): Limor Fried, Alexandre Marquet.
 

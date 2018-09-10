@@ -24,7 +24,7 @@
 ====================================================
 
 This is a MicroPython driver for the AM2320 temperature and humidity sensor,
-adapted from Adafreuit's implementation in CircuitPython.
+adapted from Adafreuit's implementation en CircuitPython.
 
 * Author(s): Limor Fried, Alexandre Marquet.
 
@@ -57,10 +57,10 @@ __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/alexmrqt/Adafruit_CircuitPython_am2320.git"
 
 
-AM2320_DEFAULT_ADDR = const(0x5C)
-AM2320_CMD_READREG = const(0x03)
-AM2320_REG_TEMP_H = const(0x02)
-AM2320_REG_HUM_H = const(0x00)
+_AM2320_DEFAULT_ADDR = const(0x5C)
+_AM2320_CMD_READREG = const(0x03)
+_AM2320_REG_TEMP_H = const(0x02)
+_AM2320_REG_HUM_H = const(0x00)
 
 
 def _crc16(data):
@@ -83,7 +83,7 @@ class AM2320:
     :param int address: (optional) The I2C address of the device.
 
     """
-    def __init__(self, i2c_bus, address=AM2320_DEFAULT_ADDR):
+    def __init__(self, i2c_bus, address=_AM2320_DEFAULT_ADDR):
         self._i2c_bus = i2c_bus
         self._addr = address
 
@@ -93,7 +93,7 @@ class AM2320:
         time.sleep(0.01)  # wait 10 ms
 
         # Send command to read register
-        cmd = [AM2320_CMD_READREG, register & 0xFF, length]
+        cmd = [_AM2320_CMD_READREG, register & 0xFF, length]
         # print("cmd: %s" % [hex(i) for i in cmd])
         self._i2c_bus.writeto(self._addr, bytes(cmd))
         time.sleep(0.002)  # wait 2 ms for reply
@@ -113,7 +113,7 @@ class AM2320:
     @property
     def temperature(self):
         """The measured temperature in celsius."""
-        temperature = struct.unpack(">H", self._read_register(AM2320_REG_TEMP_H, 2))[0]
+        temperature = struct.unpack(">H", self._read_register(_AM2320_REG_TEMP_H, 2))[0]
         if temperature >= 32768:
             temperature = 32768 - temperature
         return temperature/10.0
@@ -121,5 +121,5 @@ class AM2320:
     @property
     def relative_humidity(self):
         """The measured relative humidity in percent."""
-        humidity = struct.unpack(">H", self._read_register(AM2320_REG_HUM_H, 2))[0]
+        humidity = struct.unpack(">H", self._read_register(_AM2320_REG_HUM_H, 2))[0]
         return humidity/10.0
